@@ -30,14 +30,64 @@ namespace RDPLogEvent
             try
             {
                 EventLogReader logReader = new EventLogReader(eventsQuery);
+                
                 for (EventRecord logEntry = logReader.ReadEvent(); logEntry != null; logEntry = logReader.ReadEvent())
                 {
                     // Read Event details
                     var loginEventPropertySelector = new EventLogPropertySelector(new[] {
                         "Event/EventData/Data[@Name='IpAddress']",
                         "Event/EventData/Data[@Name='IpPort']"});
-                    var eventProperties = ((EventLogRecord)logEntry).GetPropertyValues(loginEventPropertySelector);
+                    IList<object> logEventProperties = ((EventLogRecord)logEntry).GetPropertyValues(loginEventPropertySelector);
+                    Console.WriteLine("{0} / {1}", logEventProperties[0], logEventProperties[1]);
+                    Console.WriteLine("{0} 컴퓨터이름", logEntry.TimeCreated);
+
+                    //Console.WriteLine("a");
+
+                    //EventLogPropertySelector logPropertyContext = new EventLogPropertySelector(xPathEnum);
+
+                    //IList<object> logEventProps = ((EventLogRecord)arg.EventRecord).GetPropertyValues(logPropertyContext);
+                    //Log("Time: ", logEventProps[0]);
+                    //foreach (var p in logEventProperties)
+                    //{
+                    //    Console.WriteLine(p);
+                    //}
+
+                    /**
+                        EventLogReader reader = new 
+                        EventLogReader(eventLogQuery);
+                                                            reader.Seek(SeekOrigin.Begin, filter.PageStart);
+
+                        eventLogs.TotalLogs = **totalRowsAffected**;                    
+                        EventRecord eventInstance = reader.ReadEvent();
+
+                        int i = filter.PageSize;
+                        while (eventInstance != null && i-- > 0)
+                        {
+                                             try
+                                             {
+                                              eventLogs.Entries.Add(new EventLogData
+                                              {
+                                               Type = eventInstance.LevelDisplayName,
+                                               Source = eventInstance.ProviderName,
+                                               Time = eventInstance.TimeCreated,
+                                               Category = eventInstance.TaskDisplayName,
+                                               EventId = eventInstance.Id,
+                                               User = eventInstance.UserId != null ? eventInstance.UserId.Value : "",
+                                               Computer = eventInstance.MachineName,
+                                               Message = eventInstance.FormatDescription(),
+                                               FullXml = eventInstance.ToXml()
+                                              });
+                                             }catch{}
+                        eventInstance = reader.ReadEvent();
+                        }
+                        }
+                        return eventLogs;
+                     **/
                 }
+
+
+
+
             }
             catch (EventLogNotFoundException ex)
             {
