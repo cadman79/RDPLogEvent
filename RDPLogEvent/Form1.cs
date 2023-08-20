@@ -15,6 +15,10 @@ using System.Collections;
 using System.Data.Common;
 using System.Reflection.Emit;
 using System.Xml.Linq;
+using System.Threading;
+using System.ComponentModel.Design;
+using System.Collections.Specialized;
+using static System.Windows.Forms.ListView;
 //using IP2Country;
 //using IP2Country.MaxMind;
 
@@ -79,9 +83,102 @@ namespace RDPLogEvent
         public Form1()
         {
             InitializeComponent();
+            Init();
         }
 
-        
+        /// <summary>
+        /// 초기화 설정
+        /// </summary>
+        private void Init()
+        {
+            listView1.View = View.Details;
+            listView1.GridLines = true;
+            listView1.FullRowSelect = true;
+            listView1.Columns.Add("NO", 50);
+            listView1.Columns.Add("IP Address", 100);
+            listView1.Columns.Add("WorkstationName", 150);
+            listView1.Columns.Add("UserName", 100);
+            listView1.Columns.Add("TimeCreated", 150);
+        }
+
+
+        //public static async Task<IList<object>> FindEventsAsync2(EventLog theLog, string query, CancellationToken token)
+        //{
+        //    var eventQuery = new EventLogQuery(theLog.Log, PathType.LogName, query);            
+        //    IList<object> logEventProperties = new List<object>();
+        //    await Task.Factory.StartNew(() =>
+        //    {
+        //        EventLogReader logReader = new EventLogReader(eventQuery);
+        //        for (EventRecord logEntry = logReader.ReadEvent(); logEntry != null; logEntry = logReader.ReadEvent())
+        //        {
+        //            // Read Event details
+        //            var loginEventPropertySelector = new EventLogPropertySelector(new[] {
+        //                    "Event/EventData/Data[@Name='IpAddress']",
+        //                    "Event/EventData/Data[@Name='WorkstationName']",
+        //                    "Event/EventData/Data[@Name='TargetUserName']",
+        //                    "Event/System/TimeCreated/@SystemTime"
+        //                });                    
+        //            logEventProperties = ((EventLogRecord)logEntry).GetPropertyValues(loginEventPropertySelector);
+        //        }
+
+        //    },
+        //                                token);
+        //    return logEventProperties;
+        //}
+
+        private BindingList<EventLogRecord> eventLogRecordList = new BindingList<EventLogRecord>();
+        private void AddRecord(EventLogRecord record)
+        {
+            eventLogRecordList.Add(record);
+        }
+
+        private async void FindEventsAsync(string theLog, string query)
+        {
+            var eventQuery = new EventLogQuery(theLog, PathType.LogName, query);
+            
+            await Task.Factory.StartNew(() =>
+            {
+                int limitCount = 1000;   // 이벤트 최대갯수
+                int currentCount = 0;   // 현재 이벤트 count
+
+                EventLogReader logReader = new EventLogReader(eventQuery);
+
+                for (EventRecord logEntry = logReader.ReadEvent(); logEntry != null; logEntry = logReader.ReadEvent())
+                {
+                    EventLogRecord record = new EventLogRecord(logEntry);
+                    AddRecord(record);
+                    if (++currentCount > limitCount)
+                    {
+                        break;
+                    }
+                }
+
+                dataGridView1.BeginInvoke(new MethodInvoker(delegate ()
+                {
+                    BindingSource bindingSource = new BindingSource();
+                    bindingSource.DataSource = eventLogRecordList;
+                    dataGridView1.DataSource = bindingSource;
+                    
+                }));
+                
+
+
+            });           
+        }
+
+        private void ListItemAppend(ListViewItem LstItems)
+        {
+            //listView1.BeginInvoke(new MethodInvoker(delegate ()
+            //{
+            //    listView1.Items.Add(LstItems);
+            //}));
+
+            this.Invoke(new MethodInvoker(delegate ()
+            {
+                listView1.Items.Add(LstItems);
+            }));
+
+        }
 
         private void button1_Click(object sender, EventArgs e)
         {
@@ -90,115 +187,68 @@ namespace RDPLogEvent
 
             //https://mattmofdoom.com/detecting-logins-like-a-boss-the-seq-client-for-windows-logins/
 
-            //var resolver = new IP2CountryResolver( new MaxMindGeoLiteFileSource(@"c:\Temp\GeoLite2-Country-CSV_20230815.zip"));
-            //var result = resolver.Resolve("172.217.17.110");
 
-            listView1.View = View.Details;
-            listView1.GridLines = true;
-            listView1.FullRowSelect = true;
-            listView1.Columns.Add("No", 200);
-            listView1.Columns.Add("Name", 50);
-            listView1.Columns.Add("Name", 100);
-            listView1.Columns.Add("Name", 100);
-            string[] arr = new string[4];
-            ListViewItem lstItem;
+            //string[] arr = new string[5];
+            //ListViewItem lstItem;
+
             
 
-            string query = @"*[System/EventID=4625]";
-            EventLogQuery eventsQuery = new EventLogQuery("Security", PathType.LogName, query);
-            eventsQuery.ReverseDirection = true;    // 이벤트 최신 or 오래된순서 (order by)
-            try
-            {
-                int limitCount = 1000;   // 이벤트 최대갯수
-                int currentCount = 0;   // 현재 이벤트 count
-                EventLogReader logReader = new EventLogReader(eventsQuery);
-                for (EventRecord logEntry = logReader.ReadEvent(); logEntry != null; logEntry = logReader.ReadEvent())
-                {
-                    // Read Event details
-                    var loginEventPropertySelector = new EventLogPropertySelector(new[] {
-                        "Event/EventData/Data[@Name='IpAddress']",
-                        "Event/EventData/Data[@Name='IpPort']",
-                        "Event/System/TimeCreated/@SystemTime"
-                    });
-                    //IList<object> logEventProperties = ((EventLogRecord)logEntry).GetPropertyValues(loginEventPropertySelector);
-                    var logEventProperties = ((EventLogRecord)logEntry).GetPropertyValues(loginEventPropertySelector);
-                    
-                    //var result = resolver.Resolve(logEventProperties[0].ToString());
-                    //Console.WriteLine("Country: " + result?.Country);
-                    //textBox1.Text += string.Format("{0} / {1} / {2} / {3}\r\n", logEventProperties[0], logEventProperties[1], logEventProperties[2], "aa");
-                    Console.WriteLine("{0} / {1} / {2} / {3}", logEventProperties[0], logEventProperties[1], logEventProperties[2], "aa");
-                    //Console.WriteLine("{0} 컴퓨터이름", logEntry.TimeCreated);
-                    arr[0] = logEventProperties[0].ToString();
-                    arr[1] = logEventProperties[1].ToString();
-                    arr[2] = logEventProperties[2].ToString();
-                    arr[3] = "a";
-                    lstItem = new ListViewItem(arr);
-                    listView1.Items.Add(lstItem);
-
-                    if (++currentCount >= limitCount) {
-                        break;
-                    }
-
-                    //EventLogPropertySelector logPropertyContext = new EventLogPropertySelector(xPathEnum);
-
-                    //IList<object> logEventProps = ((EventLogRecord)arg.EventRecord).GetPropertyValues(logPropertyContext);
-                    //Log("Time: ", logEventProps[0]);
-                    //foreach (var p in logEventProperties)
-                    //{
-                    //    Console.WriteLine(p);
-                    //}
-
-                    /**
-                        EventLogReader reader = new 
-                        EventLogReader(eventLogQuery);
-                                                            reader.Seek(SeekOrigin.Begin, filter.PageStart);
-
-                        eventLogs.TotalLogs = **totalRowsAffected**;                    
-                        EventRecord eventInstance = reader.ReadEvent();
-
-                        int i = filter.PageSize;
-                        while (eventInstance != null && i-- > 0)
-                        {
-                                             try
-                                             {
-                                              eventLogs.Entries.Add(new EventLogData
-                                              {
-                                               Type = eventInstance.LevelDisplayName,
-                                               Source = eventInstance.ProviderName,
-                                               Time = eventInstance.TimeCreated,
-                                               Category = eventInstance.TaskDisplayName,
-                                               EventId = eventInstance.Id,
-                                               User = eventInstance.UserId != null ? eventInstance.UserId.Value : "",
-                                               Computer = eventInstance.MachineName,
-                                               Message = eventInstance.FormatDescription(),
-                                               FullXml = eventInstance.ToXml()
-                                              });
-                                             }catch{}
-                        eventInstance = reader.ReadEvent();
-                        }
-                        }
-                        return eventLogs;
-                     **/
-                }
 
 
+            //string query = @"*[System/EventID=4625]";
+            //EventLogQuery eventsQuery = new EventLogQuery("Security", PathType.LogName, query);
+            //eventsQuery.ReverseDirection = true;    // 이벤트 최신 or 오래된순서 (order by)
+            //try
+            //{
+            //    int limitCount = 1000;   // 이벤트 최대갯수
+            //    int currentCount = 0;   // 현재 이벤트 count
+            //    EventLogReader logReader = new EventLogReader(eventsQuery);
+            //    for (EventRecord logEntry = logReader.ReadEvent(); logEntry != null; logEntry = logReader.ReadEvent())
+            //    {
+            //        // Read Event details
+            //        var loginEventPropertySelector = new EventLogPropertySelector(new[] {
+            //            "Event/EventData/Data[@Name='IpAddress']",
+            //            "Event/EventData/Data[@Name='WorkstationName']",
+            //            "Event/EventData/Data[@Name='TargetUserName']",
+            //            "Event/System/TimeCreated/@SystemTime"
+            //        });
+            //        //IList<object> logEventProperties = ((EventLogRecord)logEntry).GetPropertyValues(loginEventPropertySelector);
+            //        IList<object> logEventProperties = ((EventLogRecord)logEntry).GetPropertyValues(loginEventPropertySelector);
 
+            //        arr[0] = currentCount.ToString();
+            //        arr[1] = (string)logEventProperties[0];
+            //        arr[2] = (string)logEventProperties[1];
+            //        arr[3] = (string)logEventProperties[2];
+            //        arr[4] = logEventProperties[3].ToString();
 
-            }
-            catch (EventLogNotFoundException ex)
-            {
-                Console.WriteLine("Error while reading the event logs");
-                return;
-            }
+            //        lstItem = new ListViewItem(arr);
+
+            //        listView1.Items.Add(lstItem);
+
+            //        if (++currentCount >= limitCount) {
+            //            break;
+            //        }
+
+            //    }
+            //}
+            //catch (EventLogNotFoundException ex)
+            //{
+            //    Console.WriteLine("Error while reading the event logs");
+            //    return;
+            //}
+
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            //var resolver = new IP2CountryResolver(
-            //    new MaxMindGeoLiteFileSource(@"c:\Temp\GeoLite2-Country-CSV_20230815.zip")
-            //);
-            //var result = resolver.Resolve("172.217.17.110");
-            //Console.WriteLine("Country: " + result?.Country);
+            //this.listView1.BeginUpdate();
+            FindEventsAsync("Security", @"*[System/EventID=4625]");
+            //this.listView1.EndUpdate();
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+         
         }
     } // public(e)
 } // namespace(e)
