@@ -39,7 +39,7 @@ namespace RDPLogEvent
             { // 처음부터 프로그램은 관리자 권한으로 실행되고 있는 경우라면 ..
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                Application.Run(new Form1());
+                Application.Run(new Main());
             }
 
             //Application.EnableVisualStyles();
