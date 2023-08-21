@@ -129,6 +129,7 @@ namespace RDPLogEvent
                     break;
                 }
             }
+
             listView1.Items.AddRange(items.ToArray());
 
             stopwatch.Stop();
