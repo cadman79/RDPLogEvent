@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 using System.Drawing;
 using System.Linq;
@@ -83,16 +84,21 @@ namespace RDPLogEvent
 
         private void btnLog_Click(object sender, EventArgs e)
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             int currentCount = 0;
-            string[] arr = new string[5];
             string QueryString = @"*[System/EventID=4625]";
             var eventQuery = new EventLogQuery("Security", PathType.LogName, QueryString);
             eventQuery.ReverseDirection = true;    // 이벤트 최신 or 오래된순서 (order by)
 
-            IList<object> logEventProperties = new List<object>();
             EventLogReader logReader = new EventLogReader(eventQuery);
             
-            ListViewItem item = new ListViewItem();            
+            var items = new List<ListViewItem>();
+            ListViewItem item;
+
+            //label1.Text = ((EventRecord)logEntry).c
+            ///((EventLogReader)logReader).
 
             for (EventRecord logEntry = logReader.ReadEvent(); logEntry != null; logEntry = logReader.ReadEvent())
             {
@@ -103,26 +109,31 @@ namespace RDPLogEvent
                                 "Event/EventData/Data[@Name='TargetUserName']",
                                 "Event/System/TimeCreated/@SystemTime"
                             });
-                logEventProperties = ((System.Diagnostics.Eventing.Reader.EventLogRecord)logEntry).GetPropertyValues(loginEventPropertySelector);
+                IList<object> logEventProperties = ((System.Diagnostics.Eventing.Reader.EventLogRecord)logEntry).GetPropertyValues(loginEventPropertySelector);
+                
 
-                //(IList<object>)sList.Cast<object>().ToList();
-                //lstItem = new ListViewItem(arr);
-                //item = new ListViewItem()[new ];
-                arr[0] = currentCount.ToString();
-                arr[1] = (string)logEventProperties[0];
-                arr[2] = (string)logEventProperties[1];
-                arr[3] = (string)logEventProperties[2];
-                arr[4] = logEventProperties[3].ToString();
+                item = new ListViewItem(new[] { 
+                    currentCount.ToString(), 
+                    (string)logEventProperties[0], 
+                    (string)logEventProperties[1], 
+                    (string)logEventProperties[2], 
+                    logEventProperties[3].ToString() 
+                });
 
-                item = new ListViewItem(arr);
+                items.Add(item);
 
-                listView1.Items.Add(item);
+                //listView1.Items.Add(item);
 
                 if (++currentCount >= limitCount)
                 {
                     break;
                 }
             }
+            listView1.Items.AddRange(items.ToArray());
+
+            stopwatch.Stop();
+            label1.Text += string.Format("time : {0} ms", stopwatch.ElapsedMilliseconds);
+            Console.WriteLine(string.Format("time : {0} ms", stopwatch.ElapsedMilliseconds));
 
         } //btnLog_Click (e)
 
