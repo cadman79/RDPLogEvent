@@ -75,7 +75,7 @@ namespace RDPLogEvent
             listView1.Columns.Add("NO", 50);
             listView1.Columns.Add("IP Address", 100);
             listView1.Columns.Add("WorkstationName", 150);
-            listView1.Columns.Add("UserName", 100);
+            listView1.Columns.Add("UserName", 120);
             listView1.Columns.Add("TimeCreated", 150);
         }
 
