@@ -64,6 +64,15 @@ namespace RDPLogEvent
             Init();
         }
 
+        #region 참고자료 사이트
+        /**
+         * 원격-데스크톱rdp-악용-침해사고-이벤트-로그-분석
+         * https://www.igloo.co.kr/security-information/%EC%9B%90%EA%B2%A9-%EB%8D%B0%EC%8A%A4%ED%81%AC%ED%86%B1rdp-%EC%95%85%EC%9A%A9-%EC%B9%A8%ED%95%B4%EC%82%AC%EA%B3%A0-%EC%9D%B4%EB%B2%A4%ED%8A%B8-%EB%A1%9C%EA%B7%B8-%EB%B6%84%EC%84%9D/
+         *
+         **/
+
+        #endregion
+
         /// <summary>
         /// 초기화 설정
         /// </summary>
@@ -77,6 +86,47 @@ namespace RDPLogEvent
             listView1.Columns.Add("WorkstationName", 150);
             listView1.Columns.Add("UserName", 120);
             listView1.Columns.Add("TimeCreated", 150);
+
+            //statusStrip1.RightToLeft = RightToLeft.Yes;
+            
+            toolStripStatusLabel1.Text = "time:";
+            toolStripStatusLabel2.Text = "OK";
+
+
+            List<KeyValuePair<string, string>> data = new List<KeyValuePair<string, string>>();
+
+            DDLCertify.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            data.Add(new KeyValuePair<string, string>("사용자 인증 실패", "4625"));
+            data.Add(new KeyValuePair<string, string>("사용자 인증 성공", "ASC"));
+            DDLCertify.DataSource = null;            
+            DDLCertify.DataSource = new BindingSource(data, null);
+            DDLCertify.DisplayMember = "Key";
+            DDLCertify.ValueMember = "Value";
+            DDLCertify.SelectedValue = "4625";
+
+
+            DDLOrderBy.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            data.Clear();
+            data.Add(new KeyValuePair<string, string>("최근순", "DESC"));
+            data.Add(new KeyValuePair<string, string>("오래된순", "ASC"));
+            DDLOrderBy.DataSource = null;
+            DDLOrderBy.DataSource = new BindingSource(data, null);
+            DDLOrderBy.DisplayMember = "Key";
+            DDLOrderBy.ValueMember = "Value";
+            DDLOrderBy.SelectedValue = "DESC";
+
+            DDLMaxRow.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            data.Clear();
+            data.Add(new KeyValuePair<string, string>("500건 조회", "500"));
+            data.Add(new KeyValuePair<string, string>("1000건 조회", "1000"));
+            data.Add(new KeyValuePair<string, string>("5000건 조회", "5000"));
+            data.Add(new KeyValuePair<string, string>("10000건 조회", "10000"));
+            DDLMaxRow.DataSource = null;
+            DDLMaxRow.DataSource = new BindingSource(data, null);
+            DDLMaxRow.DisplayMember = "Key";
+            DDLMaxRow.ValueMember = "Value";
+            DDLMaxRow.SelectedValue = "1000";
+
         }
 
 
@@ -133,7 +183,7 @@ namespace RDPLogEvent
             listView1.Items.AddRange(items.ToArray());
 
             stopwatch.Stop();
-            label1.Text += string.Format("time : {0} ms", stopwatch.ElapsedMilliseconds);
+            toolStripStatusLabel1.Text = string.Format("time : {0} ms", stopwatch.ElapsedMilliseconds);
             Console.WriteLine(string.Format("time : {0} ms", stopwatch.ElapsedMilliseconds));
 
         } //btnLog_Click (e)
