@@ -57,6 +57,15 @@ namespace RDPLogEvent
     */
     #endregion
 
+    #region 참고자료 사이트
+    /**
+     * 원격-데스크톱rdp-악용-침해사고-이벤트-로그-분석
+     * https://www.igloo.co.kr/security-information/%EC%9B%90%EA%B2%A9-%EB%8D%B0%EC%8A%A4%ED%81%AC%ED%86%B1rdp-%EC%95%85%EC%9A%A9-%EC%B9%A8%ED%95%B4%EC%82%AC%EA%B3%A0-%EC%9D%B4%EB%B2%A4%ED%8A%B8-%EB%A1%9C%EA%B7%B8-%EB%B6%84%EC%84%9D/
+     *
+     **/
+
+    #endregion
+
     public partial class Main : Form
     {
         public Main()
@@ -65,14 +74,7 @@ namespace RDPLogEvent
             Init();
         }
 
-        #region 참고자료 사이트
-        /**
-         * 원격-데스크톱rdp-악용-침해사고-이벤트-로그-분석
-         * https://www.igloo.co.kr/security-information/%EC%9B%90%EA%B2%A9-%EB%8D%B0%EC%8A%A4%ED%81%AC%ED%86%B1rdp-%EC%95%85%EC%9A%A9-%EC%B9%A8%ED%95%B4%EC%82%AC%EA%B3%A0-%EC%9D%B4%EB%B2%A4%ED%8A%B8-%EB%A1%9C%EA%B7%B8-%EB%B6%84%EC%84%9D/
-         *
-         **/
 
-        #endregion
 
         /// <summary>
         /// 초기화 설정
@@ -92,8 +94,8 @@ namespace RDPLogEvent
 
             //statusStrip1.RightToLeft = RightToLeft.Yes;
 
-            toolStripStatusLabel1.Text = "time:";
-            toolStripStatusLabel2.Text = "OK";
+            toolStripStatusLabel1.Text = "time: 0ms,";
+            toolStripStatusLabel2.Text = "rows:";
 
 
             List<KeyValuePair<string, string>> data = new List<KeyValuePair<string, string>>();
@@ -190,7 +192,7 @@ namespace RDPLogEvent
             listView1.Items.AddRange(items.ToArray());
             **/
             #endregion
-
+            listView1.BeginUpdate();
             listView1.Items.Clear();
 
             string EventID = (string)DDLCertify.SelectedValue;
@@ -198,11 +200,14 @@ namespace RDPLogEvent
             int MaxCount = (int)DDLMaxRow.SelectedValue;
 
             List<ListViewItem> items = EventDataQuery(EventID, ReverseDirection, MaxCount);
-            listView1.Items.AddRange(items.ToArray());
 
+            listView1.Items.AddRange(items.ToArray());
+            listView1.EndUpdate();
             stopwatch.Stop();
-            toolStripStatusLabel1.Text = string.Format("time : {0} ms", stopwatch.ElapsedMilliseconds);
-            Console.WriteLine(string.Format("time : {0} ms", stopwatch.ElapsedMilliseconds));
+            toolStripStatusLabel1.Text = string.Format("time : {0}ms,", stopwatch.ElapsedMilliseconds);
+            toolStripStatusLabel2.Text = string.Format("rows : {0}", items.Count);
+
+
 
         } //btnLog_Click (e)
 
@@ -242,17 +247,39 @@ namespace RDPLogEvent
                             });
                 IList<object> logEventProperties = ((System.Diagnostics.Eventing.Reader.EventLogRecord)logEntry).GetPropertyValues(loginEventPropertySelector);
 
+                //if(( EventID.Equals("4624") && (logEventProperties[4].Equals(2)))
+                if (EventID.Equals("4624")) // 사용자 인증 성공
+                {
+                    //if (logEventProperties[4].Equals((object)2) || logEventProperties[4].Equals((object)3) || logEventProperties[4].Equals((object)10))
+                    if (Convert.ToInt32(logEventProperties[4]).Equals(3) || Convert.ToInt32(logEventProperties[4]).Equals(10))
+                    {
+                        item = new ListViewItem(new[] {
+                        currentCount.ToString(),
+                        (string)logEventProperties[0],
+                        (string)logEventProperties[1],
+                        (string)logEventProperties[2],
+                        logEventProperties[3].ToString(),
+                        logEventProperties[4].ToString()
+                    });
 
-                item = new ListViewItem(new[] {
-                    currentCount.ToString(),
-                    (string)logEventProperties[0],
-                    (string)logEventProperties[1],
-                    (string)logEventProperties[2],
-                    logEventProperties[3].ToString(),
-                    logEventProperties[4].ToString()
-                });
+                        items.Add(item);
+                    }
+                }
+                else if (EventID.Equals("4625")) // 사용자 인증 실패
+                {
+                    item = new ListViewItem(new[] {
+                        currentCount.ToString(),
+                        (string)logEventProperties[0],
+                        (string)logEventProperties[1],
+                        (string)logEventProperties[2],
+                        logEventProperties[3].ToString(),
+                        logEventProperties[4].ToString()
+                    });
 
-                items.Add(item);
+                    items.Add(item);
+                }
+                else { }
+
 
                 //listView1.Items.Add(item);
 
