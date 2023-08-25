@@ -30,17 +30,17 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.DDLMaxRow = new System.Windows.Forms.ComboBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.DDLCertify = new System.Windows.Forms.ComboBox();
+            this.DDLOrderBy = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
             this.btnLog = new System.Windows.Forms.Button();
             this.listView1 = new System.Windows.Forms.ListView();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.DDLOrderBy = new System.Windows.Forms.ComboBox();
-            this.DDLCertify = new System.Windows.Forms.ComboBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.DDLMaxRow = new System.Windows.Forms.ComboBox();
             this.groupBox1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -60,6 +60,57 @@
             this.groupBox1.TabIndex = 1;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "이벤트 로그 검색조건";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(373, 25);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(45, 12);
+            this.label3.TabIndex = 7;
+            this.label3.Text = "조회량:";
+            // 
+            // DDLMaxRow
+            // 
+            this.DDLMaxRow.FormattingEnabled = true;
+            this.DDLMaxRow.Items.AddRange(new object[] {
+            "최근순",
+            "오래된순"});
+            this.DDLMaxRow.Location = new System.Drawing.Point(423, 21);
+            this.DDLMaxRow.Name = "DDLMaxRow";
+            this.DDLMaxRow.Size = new System.Drawing.Size(95, 20);
+            this.DDLMaxRow.TabIndex = 6;
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(209, 24);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(57, 12);
+            this.label2.TabIndex = 5;
+            this.label2.Text = "정렬방법:";
+            // 
+            // DDLCertify
+            // 
+            this.DDLCertify.FormattingEnabled = true;
+            this.DDLCertify.Items.AddRange(new object[] {
+            "최근순",
+            "오래된순"});
+            this.DDLCertify.Location = new System.Drawing.Point(73, 20);
+            this.DDLCertify.Name = "DDLCertify";
+            this.DDLCertify.Size = new System.Drawing.Size(121, 20);
+            this.DDLCertify.TabIndex = 4;
+            // 
+            // DDLOrderBy
+            // 
+            this.DDLOrderBy.FormattingEnabled = true;
+            this.DDLOrderBy.Items.AddRange(new object[] {
+            "최근순",
+            "오래된순"});
+            this.DDLOrderBy.Location = new System.Drawing.Point(266, 20);
+            this.DDLOrderBy.Name = "DDLOrderBy";
+            this.DDLOrderBy.Size = new System.Drawing.Size(95, 20);
+            this.DDLOrderBy.TabIndex = 3;
             // 
             // label1
             // 
@@ -88,6 +139,7 @@
             this.listView1.Size = new System.Drawing.Size(634, 364);
             this.listView1.TabIndex = 2;
             this.listView1.UseCompatibleStateImageBehavior = false;
+            this.listView1.Click += new System.EventHandler(this.listView1_Click);
             // 
             // statusStrip1
             // 
@@ -111,57 +163,6 @@
             this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
             this.toolStripStatusLabel2.Size = new System.Drawing.Size(121, 17);
             this.toolStripStatusLabel2.Text = "toolStripStatusLabel2";
-            // 
-            // DDLOrderBy
-            // 
-            this.DDLOrderBy.FormattingEnabled = true;
-            this.DDLOrderBy.Items.AddRange(new object[] {
-            "최근순",
-            "오래된순"});
-            this.DDLOrderBy.Location = new System.Drawing.Point(266, 20);
-            this.DDLOrderBy.Name = "DDLOrderBy";
-            this.DDLOrderBy.Size = new System.Drawing.Size(95, 20);
-            this.DDLOrderBy.TabIndex = 3;
-            // 
-            // DDLCertify
-            // 
-            this.DDLCertify.FormattingEnabled = true;
-            this.DDLCertify.Items.AddRange(new object[] {
-            "최근순",
-            "오래된순"});
-            this.DDLCertify.Location = new System.Drawing.Point(73, 20);
-            this.DDLCertify.Name = "DDLCertify";
-            this.DDLCertify.Size = new System.Drawing.Size(121, 20);
-            this.DDLCertify.TabIndex = 4;
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(209, 24);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(57, 12);
-            this.label2.TabIndex = 5;
-            this.label2.Text = "정렬방법:";
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(373, 25);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(45, 12);
-            this.label3.TabIndex = 7;
-            this.label3.Text = "조회량:";
-            // 
-            // DDLMaxRow
-            // 
-            this.DDLMaxRow.FormattingEnabled = true;
-            this.DDLMaxRow.Items.AddRange(new object[] {
-            "최근순",
-            "오래된순"});
-            this.DDLMaxRow.Location = new System.Drawing.Point(423, 21);
-            this.DDLMaxRow.Name = "DDLMaxRow";
-            this.DDLMaxRow.Size = new System.Drawing.Size(95, 20);
-            this.DDLMaxRow.TabIndex = 6;
             // 
             // Main
             // 

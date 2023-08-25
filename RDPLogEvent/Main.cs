@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MaxMind.GeoIP2;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -73,6 +74,10 @@ namespace RDPLogEvent
             InitializeComponent();
             Init();
         }
+
+        #region Nuget
+        // install-package MaxMind.GeoIP2
+        #endregion
 
         // 국가코드, 국가명
         Dictionary<string, string> CountryCode = new Dictionary<string, string>{
@@ -554,6 +559,25 @@ namespace RDPLogEvent
             return items;
         }
 
+        private void listView1_Click(object sender, EventArgs e)
+        {
+            // Shift+row클릭방지(다중선택방지)
+            if (listView1.SelectedItems.Count == 1)
+            { 
+                ListView.SelectedListViewItemCollection items = listView1.SelectedItems;
+                ListViewItem listViewItem = items[0];
+                Console.WriteLine($"{listViewItem.SubItems[1].Text}");
 
+                string ipaddr = listViewItem.SubItems[1].Text;
+                using (var reader = new DatabaseReader(@"MaxMind\GeoLite2-Country.mmdb"))
+                {
+                    var response = reader.Country(ipaddr);
+                    toolStripStatusLabel2.Text = string.Format("{0} / {1}", response.Country.IsoCode, response.Country.Name);
+                    Console.WriteLine(response.Country.IsoCode);
+                    Console.WriteLine(response.Country.Name);
+                }
+                
+            }
+        }
     } // public class (e)
 } // namespace (e)
