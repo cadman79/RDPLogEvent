@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // 제어됩니다. 어셈블리와 관련된 정보를 수정하려면
 // 이러한 특성 값을 변경하세요.
 [assembly: AssemblyTitle("RDPLogEvent")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("RDP Log Event Viewer")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("DOC")]
 [assembly: AssemblyProduct("RDPLogEvent")]
 [assembly: AssemblyCopyright("Copyright ©  2023")]
 [assembly: AssemblyTrademark("")]

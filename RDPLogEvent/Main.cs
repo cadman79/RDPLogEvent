@@ -1,5 +1,4 @@
-﻿using MaxMind.GeoIP2;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -7,11 +6,16 @@ using System.Data;
 using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Collections.Specialized;
 
 namespace RDPLogEvent
 {
@@ -63,9 +67,31 @@ namespace RDPLogEvent
      * 원격-데스크톱rdp-악용-침해사고-이벤트-로그-분석
      * https://www.igloo.co.kr/security-information/%EC%9B%90%EA%B2%A9-%EB%8D%B0%EC%8A%A4%ED%81%AC%ED%86%B1rdp-%EC%95%85%EC%9A%A9-%EC%B9%A8%ED%95%B4%EC%82%AC%EA%B3%A0-%EC%9D%B4%EB%B2%A4%ED%8A%B8-%EB%A1%9C%EA%B7%B8-%EB%B6%84%EC%84%9D/
      *
+     * Country flasgs
+     * https://github.com/hampusborgos/country-flags
+     * 
+     * ip2location(IP 국가조회)
+     * https://www.ip2location.io/
+     * 
+     * json 
+     * https://developer-talk.tistory.com/214
+     * 
+     * private ip Regex
+     * https://www.regextester.com/95489
      **/
 
     #endregion
+
+    #region Nuget패키지
+    /**
+     *  - json
+        Microsoft.Extensions.Configuration.Json
+
+        - dll 병합해서 exe파일 만들기
+        Costura.Fody
+    **/
+    #endregion
+
 
     public partial class Main : Form
     {
@@ -75,9 +101,6 @@ namespace RDPLogEvent
             Init();
         }
 
-        #region Nuget
-        // install-package MaxMind.GeoIP2
-        #endregion
 
         // 국가코드, 국가명
         Dictionary<string, string> CountryCode = new Dictionary<string, string>{
@@ -333,28 +356,26 @@ namespace RDPLogEvent
             { "HK","홍콩" }
             };
 
+        // IP2Location 라이센스 키
+        public const string LICENSE_KEY = "D6FAC74DB8CB7BCDF24ABF12EBDFBD6C";
+
 
 
         /// <summary>
-        /// 초기화 설정
+        /// 초기 설정
         /// </summary>
         private void Init()
         {
-            //foreach (KeyValuePair<string, string> item in CountryCode) {
-            //    Console.WriteLine("[{0} / {1}]", item.Key, item.Value);
-            //}
-            if(CountryCode.ContainsKey("US") == true)
-                Console.WriteLine(CountryCode["US"]);
 
             listView1.View = View.Details;
             listView1.GridLines = true;
             listView1.FullRowSelect = true;
             listView1.Columns.Add("NO", 50);
             listView1.Columns.Add("IP Address", 100);
-            listView1.Columns.Add("WorkstationName", 150);
+            listView1.Columns.Add("WorkstationName", 180);
             listView1.Columns.Add("UserName", 120);
             listView1.Columns.Add("TimeCreated", 150);
-            listView1.Columns.Add("Type", 50);
+            listView1.Columns.Add("Type", 60);
 
 
             //statusStrip1.RightToLeft = RightToLeft.Yes;
@@ -367,8 +388,8 @@ namespace RDPLogEvent
 
             DDLCertify.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             data.Clear();
-            data.Add(new KeyValuePair<string, string>("사용자 인증 실패", "4625"));
-            data.Add(new KeyValuePair<string, string>("사용자 인증 성공", "4624"));
+            data.Add(new KeyValuePair<string, string>("인증 실패", "4625"));
+            data.Add(new KeyValuePair<string, string>("인증 성공", "4624"));
             DDLCertify.DataSource = null;            
             DDLCertify.DataSource = new BindingSource(data, null);
             DDLCertify.DisplayMember = "Key";
@@ -389,10 +410,10 @@ namespace RDPLogEvent
             List<KeyValuePair<string, int>> data3 = new List<KeyValuePair<string, int>>();
             DDLMaxRow.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             data3.Clear();            
-            data3.Add(new KeyValuePair<string, int>("500건 조회", 500));
-            data3.Add(new KeyValuePair<string, int>("1000건 조회", 1000));
-            data3.Add(new KeyValuePair<string, int>("5000건 조회", 5000));
-            data3.Add(new KeyValuePair<string, int>("10000건 조회", 10000));
+            data3.Add(new KeyValuePair<string, int>("500건", 500));
+            data3.Add(new KeyValuePair<string, int>("1000건", 1000));
+            data3.Add(new KeyValuePair<string, int>("5000건", 5000));
+            data3.Add(new KeyValuePair<string, int>("10000건", 10000));
             data3.Add(new KeyValuePair<string, int>("전체조회", 0));
             DDLMaxRow.DataSource = null;
             DDLMaxRow.DataSource = new BindingSource(data3, null);
@@ -401,98 +422,64 @@ namespace RDPLogEvent
             DDLMaxRow.SelectedValue = 1000;
 
 
-
+            // 현재 실행중인 컴퓨터 IP정보
+            string myipaddr = string.Empty;
+            IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (IPAddress ipaddr in host.AddressList)
+                if (ipaddr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                    myipaddr = ipaddr.ToString();
+            if (myipaddr != string.Empty)
+            {
+                GetIPLocation(myipaddr);
+            }
         }
         
 
 
         private void btnLog_Click(object sender, EventArgs e)
         {
+            ListViewBinding();
+
+        }
+
+        private async void ListViewBinding()
+        {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
-            #region 이전소스
-            /**
-            int currentCount = 0;
-            int limitCount = 100000;
-            string QueryString = @"*[System/EventID=4625]";
-            var eventQuery = new EventLogQuery("Security", PathType.LogName, QueryString);
-            eventQuery.ReverseDirection = true;    // 이벤트 최신 or 오래된순서 (order by)
-
-            EventLogReader logReader = new EventLogReader(eventQuery);
-            
-            var items = new List<ListViewItem>();
-            ListViewItem item;
-
-            //label1.Text = ((EventRecord)logEntry).c
-            ///((EventLogReader)logReader).
-
-            for (EventRecord logEntry = logReader.ReadEvent(); logEntry != null; logEntry = logReader.ReadEvent())
-            {
-                // Read Event details
-                var loginEventPropertySelector = new EventLogPropertySelector(new[] {
-                                "Event/EventData/Data[@Name='IpAddress']",
-                                "Event/EventData/Data[@Name='WorkstationName']",
-                                "Event/EventData/Data[@Name='TargetUserName']",
-                                "Event/System/TimeCreated/@SystemTime"
-                            });
-                IList<object> logEventProperties = ((System.Diagnostics.Eventing.Reader.EventLogRecord)logEntry).GetPropertyValues(loginEventPropertySelector);
-                
-
-                item = new ListViewItem(new[] { 
-                    currentCount.ToString(), 
-                    (string)logEventProperties[0], 
-                    (string)logEventProperties[1], 
-                    (string)logEventProperties[2], 
-                    logEventProperties[3].ToString() 
-                });
-
-                items.Add(item);
-
-                //listView1.Items.Add(item);
-
-                if (++currentCount >= limitCount)
-                {
-                    break;
-                }
-            }
-
-            listView1.Items.AddRange(items.ToArray());
-            **/
-            #endregion
             listView1.BeginUpdate();
             listView1.Items.Clear();
 
             string EventID = (string)DDLCertify.SelectedValue;
             bool ReverseDirection = (bool)DDLOrderBy.SelectedValue;
             int MaxCount = (int)DDLMaxRow.SelectedValue;
-
-            List<ListViewItem> items = EventDataQuery(EventID, ReverseDirection, MaxCount);
-
+            List<ListViewItem> items = new List<ListViewItem>();
+            btnLog.Enabled = false;
+            await Task.Factory.StartNew(() =>
+            {
+                items = EventDataQuery(EventID, ReverseDirection, MaxCount);
+            });
+            btnLog.Enabled = true;
             listView1.Items.AddRange(items.ToArray());
             listView1.EndUpdate();
+
             stopwatch.Stop();
             toolStripStatusLabel1.Text = string.Format("time : {0}ms,", stopwatch.ElapsedMilliseconds);
             toolStripStatusLabel2.Text = string.Format("rows : {0}", items.Count);
-
-
-
-        } //btnLog_Click (e)
-
-
+        }
 
         /// <summary>
         /// 이벤트 로그 조회
         /// </summary>
-        /// <param name="EventID"></param>
-        /// <param name="ReverseDirection"></param>
-        /// <param name="MaxCount"></param>
+        /// <param name="EventID">이벤트ID</param>
+        /// <param name="ReverseDirection">OrderBY</param>
+        /// <param name="MaxCount">이벤트 조회수</param>
         /// <returns></returns>
         private List<ListViewItem> EventDataQuery(string EventID, bool ReverseDirection, int MaxCount)
         {
             int currentCount = 0;
             string QueryString = string.Format(@"*[System/EventID={0}]", EventID);
             var eventQuery = new EventLogQuery("Security", PathType.LogName, QueryString);
-            eventQuery.ReverseDirection = ReverseDirection;    // 이벤트 최신=true or 오래된순서=false (order by)
+            eventQuery.ReverseDirection = ReverseDirection;    // 이벤트 최신=true or 오래된 순서=false (order by)
 
             EventLogReader logReader = new EventLogReader(eventQuery);
 
@@ -559,25 +546,136 @@ namespace RDPLogEvent
             return items;
         }
 
+        
         private void listView1_Click(object sender, EventArgs e)
         {
+            // 국가코드->국가명(한글)
+            //if (CountryCode.ContainsKey("US") == true)
+            //    Console.WriteLine(CountryCode["US"]);
+
             // Shift+row클릭방지(다중선택방지)
             if (listView1.SelectedItems.Count == 1)
             { 
                 ListView.SelectedListViewItemCollection items = listView1.SelectedItems;
                 ListViewItem listViewItem = items[0];
-                Console.WriteLine($"{listViewItem.SubItems[1].Text}");
+                //Console.WriteLine($"{listViewItem.SubItems[1].Text}");
 
                 string ipaddr = listViewItem.SubItems[1].Text;
-                using (var reader = new DatabaseReader(@"MaxMind\GeoLite2-Country.mmdb"))
-                {
-                    var response = reader.Country(ipaddr);
-                    toolStripStatusLabel2.Text = string.Format("{0} / {1}", response.Country.IsoCode, response.Country.Name);
-                    Console.WriteLine(response.Country.IsoCode);
-                    Console.WriteLine(response.Country.Name);
-                }
-                
+
+                GetIPLocation(ipaddr);
+
             }
         }
+
+        /// <summary>
+        /// IP Address 정보
+        /// </summary>
+        /// <param name="ipaddr"></param>
+        private void GetIPLocation(string ipaddr)
+        {
+            // 사설망 or 루프백 체크(정규식)
+            Regex privateRegex = new Regex(@"(^127.0.0.1$)|(^192\.168\.([0-9]|[0-9][0-9]|[0-2][0-5][0-5])\.([0-9]|[0-9][0-9]|[0-2][0-5][0-5])$)|(^172\.([1][6-9]|[2][0-9]|[3][0-1])\.([0-9]|[0-9][0-9]|[0-2][0-5][0-5])\.([0-9]|[0-9][0-9]|[0-2][0-5][0-5])$)|(^10\.([0-9]|[0-9][0-9]|[0-2][0-5][0-5])\.([0-9]|[0-9][0-9]|[0-2][0-5][0-5])\.([0-9]|[0-9][0-9]|[0-2][0-5][0-5])$)");
+            if (privateRegex.IsMatch(ipaddr))
+            {
+                lblIPAddress.Text = ipaddr;
+                if (ipaddr.Equals("127.0.0.1"))
+                    lblCountry.Text = "루프백(localhost)";
+                else
+                    lblCountry.Text = "사설망(Private IP)";
+            }
+            else
+            {
+                string jsonData = GetJsonData(string.Format("https://api.ip2location.io/?key={0}&ip={1}", LICENSE_KEY, ipaddr));
+                //string jsonData = GetJsonData(string.Format("https://api.ip2location.io/?key={0}&ip={1}", LICENSE_KEY, "211.220.224.50"));
+                if (jsonData.Equals(string.Empty))
+                {
+                    lblIPAddress.Text = ipaddr;
+                    lblCountry.Text = "통신오류(WebExcp)";
+                }
+                else
+                {
+                    IP2Location ip2location = JsonSerializer.Deserialize<IP2Location>(jsonData);
+                    lblIPAddress.Text = ipaddr;
+
+                    // IP정보가 없을경우(JSON데이타 "-" 일때)
+                    if (ip2location.country_name.Equals("-"))
+                        lblCountry.Text = "정보없음";
+                    else
+                        lblCountry.Text = ip2location.country_name;
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// HTTP JSON Data
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        private string GetJsonData(string url)
+        {
+            string responseText = string.Empty;
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Method = "GET";
+            request.Timeout = 5 * 1000; // 5초
+            try
+            {
+                using (HttpWebResponse resp = (HttpWebResponse)request.GetResponse())
+                {
+                    //HttpStatusCode status = resp.StatusCode;
+
+                    Stream respStream = resp.GetResponseStream();
+                    using (StreamReader sr = new StreamReader(respStream))
+                    {
+                        responseText = sr.ReadToEnd();
+                    }
+                    respStream.Flush();
+                    respStream.Close();
+                }
+            }
+            catch (System.Net.WebException ex)
+            {
+                if(ex.Status == WebExceptionStatus.ProtocolError)
+                {
+                    var resp = ex.Response as HttpWebResponse;
+                    if (resp != null)
+                    {
+                        switch (resp.StatusCode)
+                        {
+                            case System.Net.HttpStatusCode.BadRequest:
+                                Console.WriteLine("400");
+                                break;
+                            case System.Net.HttpStatusCode.Unauthorized:
+                                Console.WriteLine("401");
+                                break;
+                            case System.Net.HttpStatusCode.Forbidden:
+                                Console.WriteLine("403");
+                                break;
+                            case System.Net.HttpStatusCode.NotFound:
+                                Console.WriteLine("404");
+                                break;
+                            case System.Net.HttpStatusCode.MethodNotAllowed:
+                                Console.WriteLine("405");
+                                break;
+                            case System.Net.HttpStatusCode.RequestTimeout:
+                                Console.WriteLine("408");
+                                break;
+                            default:
+                                Console.WriteLine("default: " + resp.StatusDescription);
+                                break;
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Exception==>" + ex.ToString());
+                }
+            }
+            
+            return responseText;
+        }
+
+
     } // public class (e)
 } // namespace (e)
