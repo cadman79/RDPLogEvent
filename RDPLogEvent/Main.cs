@@ -458,9 +458,11 @@ namespace RDPLogEvent
             {
                 items = EventDataQuery(EventID, ReverseDirection, MaxCount);
             });
-            btnLog.Enabled = true;
+            
             listView1.Items.AddRange(items.ToArray());
             listView1.EndUpdate();
+
+            btnLog.Enabled = true;
 
             stopwatch.Stop();
             toolStripStatusLabel1.Text = string.Format("time : {0}ms,", stopwatch.ElapsedMilliseconds);
