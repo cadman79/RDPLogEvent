@@ -442,6 +442,9 @@ namespace RDPLogEvent
 
         }
 
+        /// <summary>
+        /// 이벤트 로그 바인딩
+        /// </summary>
         private async void ListViewBinding()
         {
             Stopwatch stopwatch = new Stopwatch();
@@ -551,10 +554,6 @@ namespace RDPLogEvent
         
         private void listView1_Click(object sender, EventArgs e)
         {
-            // 국가코드->국가명(한글)
-            //if (CountryCode.ContainsKey("US") == true)
-            //    Console.WriteLine(CountryCode["US"]);
-
             // Shift+row클릭방지(다중선택방지)
             if (listView1.SelectedItems.Count == 1)
             { 
@@ -570,16 +569,19 @@ namespace RDPLogEvent
         }
 
         /// <summary>
-        /// IP Address 정보
+        /// IP Address 국가명 찾기
         /// </summary>
         /// <param name="ipaddr"></param>
         private void GetIPLocation(string ipaddr)
         {
+
+
+            lblIPAddress.Text = ipaddr;
+
             // 사설망 or 루프백 체크(정규식)
             Regex privateRegex = new Regex(@"(^127.0.0.1$)|(^192\.168\.([0-9]|[0-9][0-9]|[0-2][0-5][0-5])\.([0-9]|[0-9][0-9]|[0-2][0-5][0-5])$)|(^172\.([1][6-9]|[2][0-9]|[3][0-1])\.([0-9]|[0-9][0-9]|[0-2][0-5][0-5])\.([0-9]|[0-9][0-9]|[0-2][0-5][0-5])$)|(^10\.([0-9]|[0-9][0-9]|[0-2][0-5][0-5])\.([0-9]|[0-9][0-9]|[0-2][0-5][0-5])\.([0-9]|[0-9][0-9]|[0-2][0-5][0-5])$)");
             if (privateRegex.IsMatch(ipaddr))
             {
-                lblIPAddress.Text = ipaddr;
                 if (ipaddr.Equals("127.0.0.1"))
                     lblCountry.Text = "루프백(localhost)";
                 else
@@ -587,23 +589,33 @@ namespace RDPLogEvent
             }
             else
             {
+                // IP2Location JSON 받아오기
                 string jsonData = GetJsonData(string.Format("https://api.ip2location.io/?key={0}&ip={1}", LICENSE_KEY, ipaddr));
                 //string jsonData = GetJsonData(string.Format("https://api.ip2location.io/?key={0}&ip={1}", LICENSE_KEY, "211.220.224.50"));
+
+                // JSON값을 받아오지 못하는경우 통신오류(라이센스가 틀린경우 포함)
                 if (jsonData.Equals(string.Empty))
                 {
-                    lblIPAddress.Text = ipaddr;
                     lblCountry.Text = "통신오류(WebExcp)";
                 }
                 else
                 {
+                    // JSON 직렬화(JSON to class)
                     IP2Location ip2location = JsonSerializer.Deserialize<IP2Location>(jsonData);
-                    lblIPAddress.Text = ipaddr;
 
                     // IP정보가 없을경우(JSON데이타 "-" 일때)
                     if (ip2location.country_name.Equals("-"))
+                    {
                         lblCountry.Text = "정보없음";
+                    }
                     else
-                        lblCountry.Text = ip2location.country_name;
+                    {
+                        // 국가코드를 기준으로 한글국가명 Dictionary에 있을경우 국가명(한글) 적용, 아닌경우 영문 국가명 출력
+                        if (CountryCode.ContainsKey(ip2location.country_code) == true)
+                            lblCountry.Text = CountryCode[ip2location.country_code];
+                        else
+                            lblCountry.Text = ip2location.country_name;
+                    }
                 }
             }
         }
