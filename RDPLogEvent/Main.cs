@@ -16,6 +16,9 @@ using System.Windows.Forms;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Collections.Specialized;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TreeView;
+using System.Security.Policy;
 
 namespace RDPLogEvent
 {
@@ -491,9 +494,6 @@ namespace RDPLogEvent
             var items = new List<ListViewItem>();
             ListViewItem item;
 
-            //label1.Text = ((EventRecord)logEntry).c
-            ///((EventLogReader)logReader).
-
             for (EventRecord logEntry = logReader.ReadEvent(); logEntry != null; logEntry = logReader.ReadEvent())
             {
                 // Read Event details
@@ -505,21 +505,37 @@ namespace RDPLogEvent
                                 "Event/EventData/Data[@Name='LogonType']"
                             });
                 IList<object> logEventProperties = ((System.Diagnostics.Eventing.Reader.EventLogRecord)logEntry).GetPropertyValues(loginEventPropertySelector);
-
-                //if(( EventID.Equals("4624") && (logEventProperties[4].Equals(2)))
+                                
                 if (EventID.Equals("4624")) // 사용자 인증 성공
                 {
-                    //if (logEventProperties[4].Equals((object)2) || logEventProperties[4].Equals((object)3) || logEventProperties[4].Equals((object)10))
+
+                    #region LogonType 유형별 설명
+                    /**
+                    0   System                  시스템 시작과 같이 시스템 계정에서만 사용
+                    2   Interactive             사용자가 로그온한 경우
+                    3   Network                 네트워크에서 로그온한 사용자 또는 컴퓨터
+                    4   Batch                   직접적인 개입 없이 사용자를 대신하여 프로세스가 실행될 수 있는  일괄 처리 서버에서 사용
+                    5   Service                 서비스 제어 관리자가 서비스를 시작
+                    7   Unlock                  잠금 해제된 경우
+                    8   NetworkCleartext        사용자가 네트워크에서 로그온한 경우로, 사용자의 암호가 인증 패키지에 전달된 언해시(unhash) 양식
+                    9   NewCredentials          호출자에서 현재 토큰을 복제하고 아웃바운드 연결에 대한 새 자격 증명을 지정한 경우(새 로그온 세션은 로컬 ID가 동일하지만 다른 네트워크 연결에 대해 서로 다른 자격 증명을 사용)
+                    10  RemoteInteractive       사용자가 터미널 서비스 또는 원격 데스크톱을 사용하여 원격 로그온
+                    11  CachedInteractive       사용자가 컴퓨터에 로컬로 저장된 네트워크 자격 증명을 사용하여 로그온한 경우(도메인 컨트롤러에 연결하여 자격 증명을 확인하지 못함)
+                    12  CachedRemoteInteractive RemoteInteractive와 동일(내부 감사에 사용)
+                    13  CachedUnlock            Workstation logon
+                    **/
+                    #endregion
+                    // LogonType == 3 or 10 인경우 리스트추가
                     if (Convert.ToInt32(logEventProperties[4]).Equals(3) || Convert.ToInt32(logEventProperties[4]).Equals(10))
                     {
                         item = new ListViewItem(new[] {
-                        currentCount.ToString(),
-                        (string)logEventProperties[0],
-                        (string)logEventProperties[1],
-                        (string)logEventProperties[2],
-                        logEventProperties[3].ToString(),
-                        logEventProperties[4].ToString()
-                    });
+                            currentCount.ToString(),
+                            (string)logEventProperties[0],
+                            (string)logEventProperties[1],
+                            (string)logEventProperties[2],
+                            logEventProperties[3].ToString(),
+                            logEventProperties[4].ToString()
+                        });
 
                         items.Add(item);
                     }
@@ -559,7 +575,6 @@ namespace RDPLogEvent
             { 
                 ListView.SelectedListViewItemCollection items = listView1.SelectedItems;
                 ListViewItem listViewItem = items[0];
-                //Console.WriteLine($"{listViewItem.SubItems[1].Text}");
 
                 string ipaddr = listViewItem.SubItems[1].Text;
 
@@ -590,8 +605,7 @@ namespace RDPLogEvent
             else
             {
                 // IP2Location JSON 받아오기
-                string jsonData = GetJsonData(string.Format("https://api.ip2location.io/?key={0}&ip={1}", LICENSE_KEY, ipaddr));
-                //string jsonData = GetJsonData(string.Format("https://api.ip2location.io/?key={0}&ip={1}", LICENSE_KEY, "211.220.224.50"));
+                string jsonData = GetJsonData(string.Format("https://api.ip2location.io/?key={0}&ip={1}", LICENSE_KEY, ipaddr));                
 
                 // JSON값을 받아오지 못하는경우 통신오류(라이센스가 틀린경우 포함)
                 if (jsonData.Equals(string.Empty))
