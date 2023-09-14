@@ -254,7 +254,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EventLogRecord.cs" />
     <Compile Include="IP2Location.cs" />
     <Compile Include="Main.cs">
       <SubType>Form</SubType>
