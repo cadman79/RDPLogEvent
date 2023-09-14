@@ -369,7 +369,6 @@ namespace RDPLogEvent
         /// </summary>
         private void Init()
         {
-
             listView1.View = View.Details;
             listView1.GridLines = true;
             listView1.FullRowSelect = true;
