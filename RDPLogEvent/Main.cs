@@ -397,7 +397,7 @@ namespace RDPLogEvent
             DDLCertify.DisplayMember = "Key";
             DDLCertify.ValueMember = "Value";
             DDLCertify.SelectedValue = "4625";
-
+            
             List<KeyValuePair<string, bool>> data2 = new List<KeyValuePair<string, bool>>();
             DDLOrderBy.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             data2.Clear();
@@ -411,7 +411,8 @@ namespace RDPLogEvent
 
             List<KeyValuePair<string, int>> data3 = new List<KeyValuePair<string, int>>();
             DDLMaxRow.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            data3.Clear();            
+            data3.Clear();
+            data3.Add(new KeyValuePair<string, int>("100건", 100));
             data3.Add(new KeyValuePair<string, int>("500건", 500));
             data3.Add(new KeyValuePair<string, int>("1000건", 1000));
             data3.Add(new KeyValuePair<string, int>("5000건", 5000));
@@ -537,6 +538,7 @@ namespace RDPLogEvent
                         });
 
                         items.Add(item);
+                        ++currentCount;
                     }
                 }
                 else if (EventID.Equals("4625")) // 사용자 인증 실패
@@ -551,13 +553,14 @@ namespace RDPLogEvent
                     });
 
                     items.Add(item);
+                    ++currentCount;
                 }
                 else { }
 
 
                 //listView1.Items.Add(item);
 
-                if ((++currentCount >= MaxCount) && (MaxCount > 0))
+                if ((currentCount >= MaxCount) && (MaxCount > 0))
                 {
                     break;
                 }
