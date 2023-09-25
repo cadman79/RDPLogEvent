@@ -360,7 +360,7 @@ namespace RDPLogEvent
             };
 
         // IP2Location 라이센스 키
-        public const string LICENSE_KEY = "D6FAC74DB8CB7BCDF24ABF12EBDFBD6C";
+        public const string LICENSE_KEY = "IP2Location라이센스키입력";
 
 
 
